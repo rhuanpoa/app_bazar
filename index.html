@@ -174,6 +174,9 @@
 
 /* ---------------- dados ---------------- */
 
+// suba junto com a VERSAO do sw.js a cada publicação
+const APP_VERSAO = '4';
+
 const CHAVE = 'bazar_anna_v1';
 
 const SEMENTE = {
@@ -956,7 +959,11 @@ function menuAjustes() {
     <button class="acao" onclick="exportar()">Salvar cópia dos dados</button>
     <label class="acao" style="display:block;">Restaurar de uma cópia
       <input type="file" accept="application/json,.json" style="display:none" onchange="importar(event)">
-    </label>`);
+    </label>
+    <button class="acao" onclick="atualizarApp()">Buscar atualização do app</button>
+    <div style="text-align:center; font-size:11.5px; color:var(--suave); margin:14px 0 4px;">
+      versão ${APP_VERSAO}
+    </div>`);
 }
 
 function exportar() {
@@ -1008,11 +1015,43 @@ document.addEventListener('touchmove', (e) => {
 
 render();
 
-// abre sem internet depois da primeira visita (só funciona em https)
+/* ---------------- atualização automática ----------------
+   No iPhone, reabrir o app pelo seletor não recarrega a página — ela volta
+   da memória. Por isso procuramos versão nova toda vez que o app aparece,
+   e recarregamos sozinhos quando o service worker novo assume. */
+
+let registro = null;
+let recarregando = false;
+
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+    // updateViaCache 'none': busca o sw.js na rede, sem passar pelo cache do navegador
+    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+      .then((reg) => { registro = reg; reg.update().catch(() => {}); })
+      .catch(() => {});
   });
+
+  // service worker novo assumiu = tem versão nova pronta
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (recarregando) return;
+    recarregando = true;
+    location.reload();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && registro) registro.update().catch(() => {});
+  });
+}
+
+function atualizarApp() {
+  fecharModal();
+  toast('Procurando atualização…');
+  const limpar = 'caches' in window
+    ? caches.keys().then((ns) => Promise.all(ns.map((n) => caches.delete(n))))
+    : Promise.resolve();
+  limpar
+    .then(() => registro ? registro.update().catch(() => {}) : null)
+    .then(() => setTimeout(() => location.reload(), 600));
 }
 </script>
 </body>
