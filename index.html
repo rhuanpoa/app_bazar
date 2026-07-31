@@ -106,6 +106,10 @@
     position: absolute; top: 8px; right: 8px; font-size: 10.5px; font-weight: 700;
     background: #fff; padding: 3px 8px; border-radius: 999px;
   }
+  .tag-estoque.vendido {
+    background: var(--texto); color: #fff; letter-spacing: .03em;
+    box-shadow: 0 2px 8px rgba(58, 37, 48, .3);
+  }
 
   nav {
     position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-h);
@@ -175,6 +179,7 @@ let dados = carregar();
 let aba = 'inicio';
 let formProduto = false;   // false | true | id da peça em edição
 let formCaixa = false;
+let busca = '';
 let pagamento = 'Pix';
 let tipoCaixa = 'entrada';
 
@@ -281,7 +286,18 @@ function semana() {
 }
 
 const corEstoque = (q) => q === 0 ? '#B79AA6' : q === 1 ? 'var(--rosa)' : 'var(--verde)';
-const rotuloEstoque = (q) => q === 0 ? 'esgotado' : q + ' un';
+const rotuloEstoque = (q) => q === 0 ? 'Vendido' : q + ' un';
+
+// tira acento e caixa alta, pra buscar "trico" e achar "tricô"
+function chave(s) {
+  return String(s == null ? '' : s)
+    .normalize('NFD')
+    .split('')
+    .filter((c) => { const n = c.charCodeAt(0); return n < 0x300 || n > 0x36f; })
+    .join('')
+    .toLowerCase()
+    .trim();
+}
 
 /* ---------------- pedaços de tela ---------------- */
 
@@ -401,38 +417,102 @@ function telaProdutos() {
         ${editando ? 'Salvar alterações' : 'Adicionar ao catálogo'}</button>
     </div>`;
 
-  const grade = !dados.products.length
-    ? '<div class="vazio">Nenhuma peça cadastrada.<br>Toque em “+ Nova peça” para começar.</div>'
-    : `<div class="grid2" style="gap:14px;">
-        ${dados.products.map(p => `
-          <div class="card" style="overflow:hidden;" onclick="menuProduto('${p.id}')">
-            <div style="position:relative;">
-              ${p.foto ? `<img class="prod-foto" src="${esc(p.foto)}" alt="">`
-                       : `<div class="prod-foto"><span style="position:absolute; bottom:8px; left:8px; font-family:monospace;
-                            font-size:10px; color:#C98DAC; background:rgba(255,255,255,.6); padding:2px 6px; border-radius:6px;">sem foto</span></div>`}
-              <span class="tag-estoque" style="color:${corEstoque(p.estoque)}">${rotuloEstoque(p.estoque)}</span>
-            </div>
-            <div style="padding:11px 13px 14px;">
-              <div style="font-size:13.5px; font-weight:600; line-height:1.25; height:34px; overflow:hidden;">${esc(p.nome)}</div>
-              <div class="linha" style="margin-top:6px;">
-                <span style="font-size:11px; font-weight:600; color:var(--suave); background:var(--rosa-pale);
-                  padding:3px 9px; border-radius:999px;">${esc(p.tamanho)}</span>
-                <span style="font-size:16px; font-weight:700; color:var(--rosa);">${brl(p.preco)}</span>
-              </div>
-            </div>
-          </div>`).join('')}
-       </div>`;
-
   return `
-    <div class="linha" style="align-items:flex-end; margin-bottom:16px;">
+    <div class="linha" style="align-items:flex-end; margin-bottom:14px;">
       <div>
         <h1 class="titulo">Produtos</h1>
-        <div class="sub">${dados.products.length} ${dados.products.length === 1 ? 'peça' : 'peças'} no catálogo</div>
+        <div class="sub" id="contaProdutos">${rotuloCatalogo()}</div>
       </div>
       <button class="pill" onclick="abrirFormProduto()">+ Nova peça</button>
     </div>
+
+    <div style="position:relative; margin-bottom:16px;">
+      <svg style="position:absolute; left:14px; top:50%; transform:translateY(-50%); pointer-events:none;"
+           width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C0A2B0"
+           stroke-width="2.2" stroke-linecap="round">
+        <circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.6-3.6"></path>
+      </svg>
+      <input id="busca" class="campo" style="padding-left:40px; padding-right:38px;"
+             placeholder="Buscar peça…" autocomplete="off" autocorrect="off"
+             value="${esc(busca)}" oninput="filtrar(this.value)">
+      <button id="limpaBusca" onclick="limparBusca()"
+              style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none;
+                     background:none; color:var(--suave); font-size:20px; line-height:1; padding:8px 10px;
+                     display:${busca ? 'block' : 'none'};">&times;</button>
+    </div>
+
     ${form}
-    ${grade}`;
+    <div id="grade">${gradeProdutos()}</div>`;
+}
+
+function rotuloCatalogo() {
+  const total = dados.products.length;
+  const achados = produtosFiltrados().length;
+  if (busca) return achados === 1 ? '1 peça encontrada' : achados + ' peças encontradas';
+  return total + (total === 1 ? ' peça' : ' peças') + ' no catálogo';
+}
+
+function produtosFiltrados() {
+  if (!busca.trim()) return dados.products;
+  const termos = chave(busca).split(/\s+/).filter(Boolean);
+  return dados.products.filter(p => {
+    const alvo = chave(p.nome + ' ' + p.tamanho);
+    return termos.every(t => alvo.includes(t));
+  });
+}
+
+function gradeProdutos() {
+  const lista = produtosFiltrados();
+
+  if (!lista.length) {
+    return busca
+      ? `<div class="vazio">Nenhuma peça com “${esc(busca)}”</div>`
+      : '<div class="vazio">Nenhuma peça cadastrada.<br>Toque em “+ Nova peça” para começar.</div>';
+  }
+
+  return `<div class="grid2" style="gap:14px;">
+    ${lista.map(p => {
+      const vendido = p.estoque === 0;
+      return `
+      <div class="card" style="overflow:hidden;" onclick="menuProduto('${p.id}')">
+        <div style="position:relative;">
+          ${p.foto ? `<img class="prod-foto" src="${esc(p.foto)}" alt="" style="${vendido ? 'opacity:.45;' : ''}">`
+                   : `<div class="prod-foto" style="${vendido ? 'opacity:.45;' : ''}">
+                        <span style="position:absolute; bottom:8px; left:8px; font-family:monospace; font-size:10px;
+                          color:#C98DAC; background:rgba(255,255,255,.6); padding:2px 6px; border-radius:6px;">sem foto</span>
+                      </div>`}
+          <span class="tag-estoque ${vendido ? 'vendido' : ''}"
+                style="${vendido ? '' : 'color:' + corEstoque(p.estoque)}">${rotuloEstoque(p.estoque)}</span>
+        </div>
+        <div style="padding:11px 13px 14px;">
+          <div style="font-size:13.5px; font-weight:600; line-height:1.25; height:34px; overflow:hidden;
+            ${vendido ? 'color:var(--suave);' : ''}">${esc(p.nome)}</div>
+          <div class="linha" style="margin-top:6px;">
+            <span style="font-size:11px; font-weight:600; color:var(--suave); background:var(--rosa-pale);
+              padding:3px 9px; border-radius:999px;">${esc(p.tamanho)}</span>
+            <span style="font-size:16px; font-weight:700; color:${vendido ? 'var(--suave)' : 'var(--rosa)'};">${brl(p.preco)}</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+// atualiza só a grade — se re-renderizasse a tela toda, o teclado fecharia a cada letra
+function filtrar(termo) {
+  busca = termo;
+  const grade = $('#grade');
+  if (grade) grade.innerHTML = gradeProdutos();
+  const conta = $('#contaProdutos');
+  if (conta) conta.textContent = rotuloCatalogo();
+  const limpa = $('#limpaBusca');
+  if (limpa) limpa.style.display = busca ? 'block' : 'none';
+}
+
+function limparBusca() {
+  const campo = $('#busca');
+  if (campo) campo.value = '';
+  filtrar('');
 }
 
 function telaVender() {
@@ -553,6 +633,7 @@ function irPara(destino) {
   aba = destino;
   formProduto = false;
   formCaixa = false;
+  busca = '';
   render();
 }
 
@@ -769,7 +850,7 @@ function venderDaqui(pid) {
   fecharModal();
   const p = dados.products.find(x => x.id === pid);
   if (!p) return;
-  if (p.estoque <= 0) return toast('Essa peça está esgotada');
+  if (p.estoque <= 0) return toast('Essa peça já foi vendida');
   aba = 'vender';
   render();
   const sel = $('#vProduto');
