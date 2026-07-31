@@ -2,13 +2,18 @@
    Deixa o app abrir sem internet. Suba o número da versão a cada mudança
    para forçar o iPhone a baixar os arquivos novos. */
 
-const VERSAO = 'bazar-v4';
+const VERSAO = 'bazar-v5';
 
 const ARQUIVOS = [
   './',
   './index.html',
   './manifest.json',
   './icon.svg',
+  './fonts/playfair.woff2',
+  './fonts/poppins-400.woff2',
+  './fonts/poppins-500.woff2',
+  './fonts/poppins-600.woff2',
+  './fonts/poppins-700.woff2',
 ];
 
 self.addEventListener('install', (e) => {

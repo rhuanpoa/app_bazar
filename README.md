@@ -57,3 +57,13 @@ baixo, mas não é zero.
 Botão **A** (canto superior direito da tela Início) → **Salvar cópia dos
 dados** gera um `.json` para guardar em Arquivos, iCloud ou WhatsApp.
 O mesmo menu tem **Restaurar de uma cópia**.
+
+## Licença
+
+MIT — veja [LICENSE](LICENSE). Pode usar, modificar e distribuir à vontade,
+mantendo o aviso de copyright.
+
+**Sem garantia.** O app é oferecido gratuitamente e "como está". Os dados
+ficam apenas no aparelho de quem usa, e o autor não se responsabiliza por
+perda de dados ou prejuízos decorrentes do uso. Faça cópias de segurança
+pelo menu do app.

@@ -12,10 +12,30 @@
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23D6407F'/%3E%3Ctext x='90' y='124' font-family='Georgia,serif' font-size='104' font-weight='700' fill='%23FFF7FB' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23D6407F'/%3E%3Ctext x='90' y='124' font-family='Georgia,serif' font-size='104' font-weight='700' fill='%23FFF7FB' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* Fontes hospedadas junto com o app: nenhum dado do visitante vai pro Google,
+     e o app abre com a tipografia certa mesmo sem internet. */
+  @font-face {
+    font-family: 'Playfair Display'; font-style: normal; font-weight: 600 700;
+    font-display: swap; src: url('./fonts/playfair.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Poppins'; font-style: normal; font-weight: 400;
+    font-display: swap; src: url('./fonts/poppins-400.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Poppins'; font-style: normal; font-weight: 500;
+    font-display: swap; src: url('./fonts/poppins-500.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Poppins'; font-style: normal; font-weight: 600;
+    font-display: swap; src: url('./fonts/poppins-600.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Poppins'; font-style: normal; font-weight: 700;
+    font-display: swap; src: url('./fonts/poppins-700.woff2') format('woff2');
+  }
+
   :root {
     --rosa: #D6407F;
     --rosa-esc: #C63274;
@@ -175,7 +195,7 @@
 /* ---------------- dados ---------------- */
 
 // suba junto com a VERSAO do sw.js a cada publicação
-const APP_VERSAO = '4';
+const APP_VERSAO = '5';
 
 const CHAVE = 'bazar_anna_v1';
 
