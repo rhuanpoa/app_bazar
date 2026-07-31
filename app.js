@@ -3,7 +3,7 @@
 /* ---------------- dados ---------------- */
 
 // suba junto com a VERSAO do sw.js a cada publicação
-const APP_VERSAO = '8';
+const APP_VERSAO = '9';
 
 const CHAVE = 'bazar_anna_v1';
 
