@@ -106,6 +106,17 @@
     position: absolute; top: 8px; right: 8px; font-size: 10.5px; font-weight: 700;
     background: #fff; padding: 3px 8px; border-radius: 999px;
   }
+  .chips {
+    display: flex; gap: 8px; overflow-x: auto; margin: 0 -20px 16px; padding: 0 20px 2px;
+    scrollbar-width: none;
+  }
+  .chips::-webkit-scrollbar { width: 0; height: 0; }
+  .chips button {
+    flex: none; border: 1px solid var(--borda-input); background: #fff; color: #9A8089;
+    font-size: 12.5px; font-weight: 600; padding: 8px 14px; border-radius: 999px; white-space: nowrap;
+  }
+  .chips button.sel { border-color: var(--rosa); background: var(--rosa); color: #fff; }
+
   .tag-estoque.vendido {
     background: var(--texto); color: #fff; letter-spacing: .03em;
     box-shadow: 0 2px 8px rgba(58, 37, 48, .3);
@@ -180,6 +191,7 @@ let aba = 'inicio';
 let formProduto = false;   // false | true | id da peça em edição
 let formCaixa = false;
 let busca = '';
+let ordem = carregarOrdem();   // preferência dela, fica salva entre as aberturas
 let pagamento = 'Pix';
 let tipoCaixa = 'entrada';
 
@@ -441,6 +453,12 @@ function telaProdutos() {
                      display:${busca ? 'block' : 'none'};">&times;</button>
     </div>
 
+    <div class="chips" id="chipsOrdem">
+      ${ORDENS.map(o => `
+        <button data-ordem="${o.chave}" class="${ordem === o.chave ? 'sel' : ''}"
+                onclick="escolherOrdem('${o.chave}')">${o.nome}</button>`).join('')}
+    </div>
+
     ${form}
     <div id="grade">${gradeProdutos()}</div>`;
 }
@@ -452,13 +470,64 @@ function rotuloCatalogo() {
   return total + (total === 1 ? ' peça' : ' peças') + ' no catálogo';
 }
 
+const ORDENS = [
+  { chave: 'recentes', nome: 'Recentes' },
+  { chave: 'az', nome: 'A–Z' },
+  { chave: 'barato', nome: 'Mais baratas' },
+  { chave: 'caro', nome: 'Mais caras' },
+  { chave: 'disponivel', nome: 'Disponíveis' },
+  { chave: 'vendida', nome: 'Vendidas' },
+];
+
+const CHAVE_ORDEM = 'bazar_anna_ordem';
+
+function carregarOrdem() {
+  try {
+    const salva = localStorage.getItem(CHAVE_ORDEM);
+    return ORDENS.some(o => o.chave === salva) ? salva : 'recentes';
+  } catch (e) {
+    return 'recentes';
+  }
+}
+
+// compara pelo nome, sem acento — critério de desempate de todas as ordens
+const porNome = (a, b) => chave(a.nome).localeCompare(chave(b.nome), 'pt-BR');
+
+function ordenar(lista) {
+  const l = lista.slice();   // não mexe na ordem original do catálogo
+  switch (ordem) {
+    case 'az':
+      return l.sort(porNome);
+    case 'barato':
+      return l.sort((a, b) => a.preco - b.preco || porNome(a, b));
+    case 'caro':
+      return l.sort((a, b) => b.preco - a.preco || porNome(a, b));
+    case 'disponivel':
+      return l.sort((a, b) => (a.estoque === 0) - (b.estoque === 0) || porNome(a, b));
+    case 'vendida':
+      return l.sort((a, b) => (b.estoque === 0) - (a.estoque === 0) || porNome(a, b));
+    default:
+      return l;   // ordem de cadastro, mais novas primeiro
+  }
+}
+
 function produtosFiltrados() {
-  if (!busca.trim()) return dados.products;
   const termos = chave(busca).split(/\s+/).filter(Boolean);
-  return dados.products.filter(p => {
+  const achados = !termos.length ? dados.products : dados.products.filter(p => {
     const alvo = chave(p.nome + ' ' + p.tamanho);
     return termos.every(t => alvo.includes(t));
   });
+  return ordenar(achados);
+}
+
+function escolherOrdem(nova) {
+  ordem = nova;
+  try { localStorage.setItem(CHAVE_ORDEM, nova); } catch (e) { /* modo privado */ }
+  document.querySelectorAll('#chipsOrdem button').forEach(b => {
+    b.classList.toggle('sel', b.dataset.ordem === nova);
+  });
+  const grade = $('#grade');
+  if (grade) grade.innerHTML = gradeProdutos();
 }
 
 function gradeProdutos() {
