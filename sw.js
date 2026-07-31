@@ -2,12 +2,13 @@
    Deixa o app abrir sem internet. Suba o número da versão a cada mudança
    para forçar o iPhone a baixar os arquivos novos. */
 
-const VERSAO = 'bazar-v7';
+const VERSAO = 'bazar-v8';
 
 const ARQUIVOS = [
   './',
   './index.html',
   './styles.css',
+  './app.js',
   './manifest.json',
   './icon.svg',
   './fonts/playfair.woff2',
